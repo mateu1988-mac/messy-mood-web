@@ -48,6 +48,15 @@ const MessyMoodLogo = ({ className }) => (
 export default function App() {
   const [view, setView] = useState('home');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    nombreTutor: '',
+    nombreNiño: '',
+    email: '',
+    telefono: '',
+    notas: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   // Efecto para forzar que el navegador no intente traducir la página
   useEffect(() => {
@@ -57,6 +66,67 @@ export default function App() {
     metaTranslate.content = "notranslate";
     document.head.appendChild(metaTranslate);
   }, []);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setError('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validación básica
+    if (!formData.nombreTutor.trim() || !formData.nombreNiño.trim() || !formData.email.trim() || !formData.telefono.trim()) {
+      setError('Por favor completa todos los campos requeridos');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const payload = {
+        nombreTutor: formData.nombreTutor,
+        nombreNiño: formData.nombreNiño,
+        email: formData.email,
+        telefono: formData.telefono,
+        fechaEvento: '20/03/2026',
+        notas: formData.notas,
+        timestamp: new Date().toISOString()
+      };
+
+      const response = await fetch('http://localhost:5678/webhook/reservas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.statusText}`);
+      }
+
+      // Limpiar formulario y mostrar página de agradecimiento
+      setFormData({
+        nombreTutor: '',
+        nombreNiño: '',
+        email: '',
+        telefono: '',
+        notas: ''
+      });
+      setView('gracias');
+    } catch (err) {
+      setError(`Error al enviar la reserva: ${err.message}`);
+      console.error('Error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const collaborators = [
     { name: "Taste the process", bio: "Nutrición y hábitos saludables.", color: "bg-[#fef0d8]" },
@@ -92,6 +162,135 @@ export default function App() {
     { item: "Snacks Saludables", price: "2.50€" }
   ];
 
+  if (view === 'gracias') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-[#fdfbf7]">
+        <div className="mb-8 animate-bounce">
+          <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#eab355" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <h1 className="text-4xl font-black text-[#7a533c] mb-4">¡Reserva Confirmada!</h1>
+        <p className="text-[#bc7948] mb-3 text-lg">Te hemos enviado un correo con los detalles de tu reserva.</p>
+        <p className="text-[#bc7948] mb-8 text-sm">Nos vemos el <span className="font-bold">20 de marzo</span> en la Fiesta de Primavera 🌸</p>
+        <button onClick={() => setView('home')} className="bg-[#5d7b93] text-white px-8 py-3 rounded-full font-bold hover:bg-[#4a6378] transition-colors">Volver a la web</button>
+      </div>
+    );
+  }
+
+  if (view === 'formulario') {
+    return (
+      <div className="min-h-screen bg-[#fdfbf7] font-sans pt-20">
+        <nav className="fixed top-0 w-full bg-[#fdfbf7]/95 backdrop-blur-md z-50 border-b border-[#f9d7d6] px-4 md:px-8 py-3 flex justify-between items-center">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}>
+            <MessyMoodLogo className="w-10 h-10" />
+            <h1 className="font-black text-lg text-[#7a533c] tracking-tight">MESSY MOOD</h1>
+          </div>
+        </nav>
+
+        <div className="max-w-2xl mx-auto px-6 py-12">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-black text-[#7a533c] mb-4">Reserva tu Plaza</h2>
+            <p className="text-[#bc7948]">Completa el formulario para asegurar tu participación en la Fiesta de Primavera</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-8 shadow-lg border border-[#f9d7d6]">
+            {error && (
+              <div className="mb-6 p-4 bg-red-100 border border-red-300 text-red-700 rounded-xl text-sm">
+                {error}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label className="block text-sm font-bold text-[#7a533c] mb-2">Nombre del Tutor *</label>
+                <input
+                  type="text"
+                  name="nombreTutor"
+                  value={formData.nombreTutor}
+                  onChange={handleInputChange}
+                  placeholder="Ej: Andrés Mateu"
+                  className="w-full px-4 py-3 rounded-xl border border-[#f9d7d6] focus:outline-none focus:ring-2 focus:ring-[#eab355] focus:border-transparent"
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-[#7a533c] mb-2">Nombre del Niño/a *</label>
+                <input
+                  type="text"
+                  name="nombreNiño"
+                  value={formData.nombreNiño}
+                  onChange={handleInputChange}
+                  placeholder="Ej: Leo"
+                  className="w-full px-4 py-3 rounded-xl border border-[#f9d7d6] focus:outline-none focus:ring-2 focus:ring-[#eab355] focus:border-transparent"
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-bold text-[#7a533c] mb-2">Correo Electrónico *</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                placeholder="Ej: andres@ejemplo.com"
+                className="w-full px-4 py-3 rounded-xl border border-[#f9d7d6] focus:outline-none focus:ring-2 focus:ring-[#eab355] focus:border-transparent"
+                disabled={loading}
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-bold text-[#7a533c] mb-2">Teléfono *</label>
+              <input
+                type="tel"
+                name="telefono"
+                value={formData.telefono}
+                onChange={handleInputChange}
+                placeholder="Ej: +34 666 000 000"
+                className="w-full px-4 py-3 rounded-xl border border-[#f9d7d6] focus:outline-none focus:ring-2 focus:ring-[#eab355] focus:border-transparent"
+                disabled={loading}
+              />
+            </div>
+
+            <div className="mb-8">
+              <label className="block text-sm font-bold text-[#7a533c] mb-2">Notas (Opcional)</label>
+              <textarea
+                name="notas"
+                value={formData.notas}
+                onChange={handleInputChange}
+                placeholder="Alergias, restricciones, comentarios..."
+                rows="4"
+                className="w-full px-4 py-3 rounded-xl border border-[#f9d7d6] focus:outline-none focus:ring-2 focus:ring-[#eab355] focus:border-transparent resize-none"
+                disabled={loading}
+              />
+            </div>
+
+            <div className="mb-6 p-4 bg-[#fef0d8] rounded-xl">
+              <p className="text-xs text-[#bc7948] font-bold">
+                <span className="block font-black text-[#eab355] mb-1">📅 Fecha del Evento</span>
+                Sábado, 20 de Marzo de 2026 · 10:00 - 14:00
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#5d7b93] hover:bg-[#4a6378] disabled:bg-gray-400 text-white px-6 py-4 rounded-full font-bold transition-colors shadow-lg disabled:cursor-not-allowed"
+            >
+              {loading ? 'Enviando...' : 'Confirmar Reserva'}
+            </button>
+
+            <p className="text-xs text-[#bc7948] text-center mt-6">
+              * Campos requeridos. Recibirás un email de confirmación.
+            </p>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   if (view === 'wip') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-[#fdfbf7]" style={{ backgroundImage: 'radial-gradient(#f9d7d6 0.5px, transparent 0.5px)', backgroundSize: '20px 20px' }}>
@@ -117,7 +316,7 @@ export default function App() {
           <a href="#cafe" className="hover:text-[#eab355] transition-colors">CAFETERÍA</a>
         </div>
         <div className="flex items-center gap-4">
-          <button onClick={() => setView('wip')} className="bg-[#eab355] text-white px-5 py-2 rounded-full font-bold text-xs hover:bg-[#d9a040] transition-colors">RESERVAR</button>
+          <button onClick={() => setView('formulario')} className="bg-[#eab355] text-white px-5 py-2 rounded-full font-bold text-xs hover:bg-[#d9a040] transition-colors">RESERVAR</button>
           <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden text-[#7a533c]">
               {isMenuOpen ? <IconX /> : <IconMenu />}
           </button>
@@ -140,7 +339,7 @@ export default function App() {
           <h2 className="text-5xl md:text-7xl font-black text-[#7a533c] mb-6 leading-[1.1]">Diversión <br/><span className="text-[#eab355]">Messy & Fun</span></h2>
           <p className="text-[#bc7948] mb-10 text-lg leading-relaxed max-w-md mx-auto md:mx-0">Talleres sensoriales y experiencias únicas para disfrutar de la crianza consciente en familia.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-            <button onClick={() => setView('wip')} className="bg-[#5d7b93] hover:bg-[#4a6378] transition-colors text-white px-10 py-4 rounded-full font-bold shadow-xl">PRÓXIMOS TALLERES</button>
+            <button onClick={() => setView('formulario')} className="bg-[#5d7b93] hover:bg-[#4a6378] transition-colors text-white px-10 py-4 rounded-full font-bold shadow-xl">PRÓXIMOS TALLERES</button>
             <a href="#event" className="border border-[#f9d7d6] hover:bg-[#f9d7d6]/30 transition-colors text-[#7a533c] px-10 py-4 rounded-full font-bold text-center">EL EVENTO</a>
           </div>
         </div>
