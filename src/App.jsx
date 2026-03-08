@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { saveReservation } from './services/api';
 
 // --- ICONOS SVG ---
 const IconMenu = () => (
@@ -99,17 +100,7 @@ export default function App() {
         timestamp: new Date().toISOString()
       };
 
-      const response = await fetch('http://localhost:5678/webhook/reservas', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`);
-      }
+      await saveReservation(payload);
 
       // Limpiar formulario y mostrar página de agradecimiento
       setFormData({
@@ -302,6 +293,100 @@ export default function App() {
     );
   }
 
+  if (view === 'primaveraland') {
+    return (
+      <div className="min-h-screen bg-[#fdfbf7] font-sans pt-16 md:pt-20">
+        <nav className="fixed top-0 w-full bg-[#fdfbf7]/95 backdrop-blur-md z-50 border-b border-[#f9d7d6] px-4 md:px-8 py-3 flex justify-between items-center">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}>
+            <MessyMoodLogo className="w-10 h-10" />
+            <h1 className="font-black text-lg text-[#7a533c] tracking-tight">MESSY MOOD</h1>
+          </div>
+        </nav>
+
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 md:py-12">
+          <div className="text-center mb-10 md:mb-16">
+            <span className="bg-[#f9d7d6] text-[#bc7948] px-3 md:px-4 py-1 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-widest mb-4 inline-block">Evento Especial</span>
+            <h2 className="text-3xl sm:text-4xl md:text-6xl font-black text-[#7a533c] mb-4 md:mb-6 leading-tight">✨🌷PRIMAVERALAND🌷✨</h2>
+            <p className="text-[#bc7948] text-base md:text-xl leading-relaxed max-w-2xl mx-auto font-medium px-2">
+              Bienvenidos a <strong className="text-[#eab355]">✨🌷PRIMAVERALAND🌷✨</strong>, un evento creado con mucho cariño por MessyMood donde disfrutar de una jornada especial en familia creando recuerdos bonitos.
+            </p>
+            <p className="text-[#bc7948] text-sm md:text-md mt-4 max-w-2xl mx-auto px-2">
+              Mediante esta difusión haremos llegar la información más relevante del evento así como los recordatorios oportunos.<br/><br/>
+              Agradeceros de antemano vuestra ilusión y colaboración en este espacio. Gracias a todos vosotros este evento va a ser <span className="font-black text-[#eab355]">MARAVILLOSO</span>.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-3xl p-5 md:p-8 shadow-xl border-4 border-[#eab355] mb-8 md:mb-12 relative overflow-hidden">
+            <div className="absolute top-0 right-0 bg-[#eab355] text-white text-[10px] md:text-xs font-bold px-3 md:px-4 py-1 rounded-bl-xl">DEL 3 AL 10 DE MARZO</div>
+            <h3 className="text-xl md:text-2xl font-black text-[#7a533c] mb-1 md:mb-2 mt-2 md:mt-0">Reserva de Espacio</h3>
+            <p className="font-bold text-[#bc7948] mb-4 md:mb-6 text-xs md:text-sm">DESDE HOY 3/3 HASTA 10/03</p>
+            <p className="text-[#7a533c] mb-6 font-medium text-sm md:text-base">Abierto el plazo de reserva de espacio para stands y puntos de venta en ✨🌷PRIMAVERALAND🌷✨</p>
+            
+            <div className="bg-[#fef0d8] p-4 md:p-6 rounded-2xl mb-6">
+              <h4 className="font-black text-[#7a533c] text-base md:text-lg mb-4 flex items-center gap-2">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eab355" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><circle cx="12" cy="12" r="10"></circle><path d="M9 12l2 2 4-4"></path></svg> 
+                ¿Cómo reservar?
+              </h4>
+              <ul className="space-y-3 text-[#7a533c] font-medium text-sm md:text-base">
+                <li className="flex items-start gap-2"><span className="text-[#eab355] font-black mt-0.5 md:mt-1 shrink-0">•</span> <span>Revisa la tabla de colaboradores.</span></li>
+                <li className="flex items-start gap-2"><span className="text-[#eab355] font-black mt-0.5 md:mt-1 shrink-0">•</span> <span>Elige tu opción.</span></li>
+                <li className="flex items-start gap-2"><span className="text-[#eab355] font-black mt-0.5 md:mt-1 shrink-0">•</span> <span>Realiza el pago escogiendo la opción que mejor te convenga (Tarjeta o Bizum).</span></li>
+              </ul>
+              
+              <div className="mt-8 flex flex-col gap-4">
+                <div className="text-center">
+                   <p className="text-[#bc7948] font-bold text-xs mb-2 uppercase tracking-wide">Opción 1: Pago Seguro Online</p>
+                   <a href="https://buy.stripe.com/test_aFabJ1fYfgg90GG58yaR200" target="_blank" rel="noopener noreferrer" className="bg-[#635BFF] hover:bg-[#4d45e5] text-white px-6 py-4 rounded-xl font-bold transition-colors inline-flex items-center justify-center w-full gap-3 shadow-md">
+                     <svg viewBox="0 0 60 25" xmlns="http://www.w3.org/2000/svg" className="w-12 h-5 fill-white"><path d="M59.64 14.28h-8.06c.19 1.93 1.6 3.06 3.2 3.06 1.02 0 2.33-.37 3.48-1.22l.18-1.37-3.2 2.05c-.64.45-1.34.62-1.92.62-2.49 0-3.62-1.84-3.62-4.48s1.65-4.8 4.2-4.8c2.14 0 3.78 1.48 3.78 3.96 0 .28-.02.58-.04.98zm-4.3-1.6c0-1.05-.72-1.78-1.8-1.78-1.24 0-1.92.9-1.92 1.78h3.72zm-12.8 1.6c0 1.25.96 1.84 2.5 1.84.45 0-1.78.2-1.78 1.48v1.9c-.3.08-.82.17-1.42.17-2.6 0-3.93-1.4-3.93-4.14 0-2.88 1.56-4.22 4.14-4.22.42 0 .86.06 1.28.17v1.94c-.45-.14-1-.22-1.57-.22-1.44 0-2.26.7-2.26 1.94zm-6.22-3.88h1.9v8.28h-1.9v-8.28zm-5.77-1.87v-1.6c0-.52.05-.88.16-1.14l-1.88-.2.03.6c-4.43-1.63-7.53-1.93-4.44-1.93 2.65 0 4.1 1.4 4.1 4.2v8.26h1.9v-8.2zm-10.23 6.94c-.95 0-1.64-.67-1.64-1.68v-3.48h3.2v-1.77h-3.2V5.3l-1.9.46v3.02h-2v1.78h2v3.7c0 1.95 1.3 2.92 3.2 2.92.5 0 1.05-.08 1.45-.18v-1.78c-.37.1-.73.18-1.1.18zm-7.66 1.33c1.78 0 3.12-.92 3.12-2.3 0-1.1-.88-1.73-2.6-2.1l-1.13-.25c-1-.22-1.46-.55-1.46-1.17 0-.75.76-1.27 1.9-1.27.86 0 1.73.28 2.45.68l.8-1.64c-.95-.44-2.15-.7-3.32-.7-2 0-3.66 .93-3.66 2.63 0 1.14.9 1.8 2.5 2.15l1.1.25c1.13.26 1.58.62 1.58 1.25 0 .82-.87 1.35-2.07 1.35-.97 0-2-.33-2.73-.83l-.84 1.62c.98.57 2.37.9 3.66.9z" /></svg>
+                     Pagar Reserva (Tarjeta)
+                   </a>
+                </div>
+                
+                <div className="relative flex items-center py-2">
+                    <div className="flex-grow border-t border-[#eab355]/30"></div>
+                    <span className="flex-shrink-0 mx-4 text-[#eab355] font-bold text-xs uppercase">o también</span>
+                    <div className="flex-grow border-t border-[#eab355]/30"></div>
+                </div>
+
+                <div className="text-center bg-white p-4 rounded-xl shadow-sm border border-[#f9d7d6]/50">
+                    <p className="text-[#bc7948] font-bold text-xs mb-2 uppercase tracking-wide">Opción 2: Bizum / Transfer</p>
+                    <p className="text-[#7a533c] text-sm">
+                      Envía un <strong className="text-[#5d7b93]">Bizum al 633022738</strong> o haz transferencia con el concepto:<br/>
+                      <span className="inline-block mt-2 bg-[#fdfbf7] px-3 py-1.5 rounded border border-[#f9d7d6] text-[#eab355] font-bold shadow-sm">COLAB+Nombre de tu proyecto</span>
+                    </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-red-50 border border-red-200 p-4 md:p-5 rounded-2xl">
+              <p className="text-red-600 font-bold text-xs md:text-sm text-center leading-relaxed">
+                * RECUERDA QUE EL EVENTO SÓLO SE VA A PUBLICITAR EN HORARIO DE MAÑANA (NO DOS FRANJAS).
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl p-5 md:p-8 shadow-lg border border-[#f9d7d6] mb-8 md:mb-12">
+            <h3 className="text-lg md:text-xl font-black text-[#7a533c] mb-4 md:mb-6 flex items-center gap-2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5d7b93" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              Información adicional
+            </h3>
+            <ul className="space-y-3 md:space-y-4 text-[#bc7948] text-sm md:text-base">
+              <li className="flex gap-2 md:gap-3"><span className="text-[#5d7b93] font-bold mt-0.5 md:mt-1 shrink-0">✓</span> <span>La aportación por reserva de espacio de stand publicitario/venta <strong>no es reembolsable</strong> excepto si la organización cancela el evento.</span></li>
+              <li className="flex gap-2 md:gap-3"><span className="text-[#5d7b93] font-bold mt-0.5 md:mt-1 shrink-0">✓</span> <span>Deberéis traer vuestra propia mesa.</span></li>
+              <li className="flex gap-2 md:gap-3"><span className="text-[#5d7b93] font-bold mt-0.5 md:mt-1 shrink-0">✓</span> <span>Incluye mantel (a conjunto para todo el evento) así como decoración general.</span></li>
+              <li className="flex gap-2 md:gap-3"><span className="text-[#5d7b93] font-bold mt-0.5 md:mt-1 shrink-0">✓</span> <span>Podéis ambientar vuestro espacio de manera libre, siguiendo la temática del evento.</span></li>
+              <li className="flex gap-2 md:gap-3"><span className="text-[#5d7b93] font-bold mt-0.5 md:mt-1 shrink-0">✓</span> <span>Revisa las normas de uso del espacio especificadas en la tabla de tarifas.</span></li>
+            </ul>
+          </div>
+          
+          <div className="text-center pb-8 md:pb-0">
+            <button onClick={() => setView('home')} className="w-full sm:w-auto bg-[#5d7b93] text-white px-8 md:px-10 py-3 md:py-4 rounded-full font-bold hover:bg-[#4a6378] transition-colors shadow-lg text-sm md:text-base">Volver a la web</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#fdfbf7] font-sans selection:bg-[#f9d7d6] selection:text-[#7a533c]">
       {/* Navbar */}
@@ -339,8 +424,8 @@ export default function App() {
           <h2 className="text-5xl md:text-7xl font-black text-[#7a533c] mb-6 leading-[1.1]">Diversión <br/><span className="text-[#eab355]">Messy & Fun</span></h2>
           <p className="text-[#bc7948] mb-10 text-lg leading-relaxed max-w-md mx-auto md:mx-0">Talleres sensoriales y experiencias únicas para disfrutar de la crianza consciente en familia.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-            <button onClick={() => setView('formulario')} className="bg-[#5d7b93] hover:bg-[#4a6378] transition-colors text-white px-10 py-4 rounded-full font-bold shadow-xl">PRÓXIMOS TALLERES</button>
-            <a href="#event" className="border border-[#f9d7d6] hover:bg-[#f9d7d6]/30 transition-colors text-[#7a533c] px-10 py-4 rounded-full font-bold text-center">EL EVENTO</a>
+            <button onClick={() => setView('primaveraland')} className="bg-[#eab355] hover:bg-[#d9a040] transition-colors text-white px-8 py-4 rounded-full font-bold shadow-xl whitespace-nowrap">✨ PRIMAVERALAND ✨</button>
+            <button onClick={() => setView('formulario')} className="bg-[#5d7b93] hover:bg-[#4a6378] transition-colors text-white px-8 py-4 rounded-full font-bold shadow-xl border border-[#4a6378]">PRÓXIMOS TALLERES</button>
           </div>
         </div>
         <div className="flex-1 w-full relative">
