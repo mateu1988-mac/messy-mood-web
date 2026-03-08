@@ -17,6 +17,30 @@ export const saveReservation = async (payload) => {
 };
 
 /**
+ * Recupera todas las reservas. Solo disponible si está configurado en Supabase.
+ */
+export const getReservations = async () => {
+  if (DB_MODE !== 'supabase') {
+    throw new Error('El panel de administración solo está disponible en modo Supabase');
+  }
+
+  if (!supabase) {
+    throw new Error('Supabase no está configurado. Revisa tus variables en .env');
+  }
+
+  const { data, error } = await supabase
+    .from('reservas')
+    .select('*')
+    .order('fecha_registro', { ascending: false });
+
+  if (error) {
+    throw new Error(`Error recuperando reservas: ${error.message}`);
+  }
+
+  return data;
+};
+
+/**
  * Lógica para guardar en Supabase
  */
 const saveToSupabase = async (payload) => {

@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { saveReservation } from './services/api';
+import { saveReservation, getReservations } from './services/api';
+
+const HERO_IMAGES = [
+  "https://images.unsplash.com/photo-1516627145497-ae6968895b74?q=80&w=1840&auto=format&fit=crop", // Maternidad cálida
+  "https://images.unsplash.com/photo-1587654780291-39c9404d746b?q=80&w=1840&auto=format&fit=crop", // Niños jugando / Montessori
+  "https://images.unsplash.com/photo-1519689680058-324335c77eba?q=80&w=1840&auto=format&fit=crop", // Familia unida
+  "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1840&auto=format&fit=crop"  // Messy play (niños pintando)
+];
 
 // --- ICONOS SVG ---
 const IconMenu = () => (
@@ -46,6 +53,46 @@ const MessyMoodLogo = ({ className }) => (
   </svg>
 );
 
+const SpringWreath = ({ className, reflect }) => (
+  <svg viewBox="0 0 120 120" className={className} style={{ transform: reflect ? 'scaleX(-1)' : 'none' }}>
+    {/* Rama Curvada */}
+    <path d="M 20 100 Q 50 20 100 20" fill="none" stroke="#eab355" strokeWidth="4" strokeLinecap="round" className="opacity-60" />
+    <path d="M 55 55 Q 70 80 100 70" fill="none" stroke="#eab355" strokeWidth="3" strokeLinecap="round" className="opacity-60" />
+    <path d="M 35 35 Q 20 10 30 0" fill="none" stroke="#eab355" strokeWidth="3" strokeLinecap="round" className="opacity-60" />
+    
+    {/* Hojas */}
+    <path d="M 22 80 C 10 70, 0 80, 20 90" fill="#eab355" className="opacity-40" />
+    <path d="M 40 40 C 30 20, 20 30, 30 50" fill="#eab355" className="opacity-40" />
+    <path d="M 70 25 C 80 10, 90 20, 80 35" fill="#eab355" className="opacity-40" />
+    
+    {/* Flor Principal */}
+    <g transform="translate(10, -10) scale(0.6)">
+       <circle cx="50" cy="20" r="12" fill="#f9d7d6" />
+       <circle cx="50" cy="80" r="12" fill="#f9d7d6" />
+       <circle cx="20" cy="50" r="12" fill="#f9d7d6" />
+       <circle cx="80" cy="50" r="12" fill="#f9d7d6" />
+       <circle cx="29" cy="29" r="12" fill="#f9d7d6" />
+       <circle cx="71" cy="71" r="12" fill="#f9d7d6" />
+       <circle cx="29" cy="71" r="12" fill="#f9d7d6" />
+       <circle cx="71" cy="29" r="12" fill="#f9d7d6" />
+       <circle cx="50" cy="50" r="14" fill="#bc7948" />
+    </g>
+    
+    {/* Flor Pequeña */}
+    <g transform="translate(50, 45) scale(0.4)">
+       <circle cx="50" cy="20" r="12" fill="#f9d7d6" opacity="0.9" />
+       <circle cx="50" cy="80" r="12" fill="#f9d7d6" opacity="0.9" />
+       <circle cx="20" cy="50" r="12" fill="#f9d7d6" opacity="0.9" />
+       <circle cx="80" cy="50" r="12" fill="#f9d7d6" opacity="0.9" />
+       <circle cx="29" cy="29" r="12" fill="#f9d7d6" opacity="0.9" />
+       <circle cx="71" cy="71" r="12" fill="#f9d7d6" opacity="0.9" />
+       <circle cx="29" cy="71" r="12" fill="#f9d7d6" opacity="0.9" />
+       <circle cx="71" cy="29" r="12" fill="#f9d7d6" opacity="0.9" />
+       <circle cx="50" cy="50" r="14" fill="#bc7948" />
+    </g>
+  </svg>
+);
+
 export default function App() {
   const [view, setView] = useState('home');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -58,6 +105,23 @@ export default function App() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Estado para el panel de administración
+  const [reservations, setReservations] = useState([]);
+  const [loadingAdmin, setLoadingAdmin] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+
+  const [currentHeroImage, setCurrentHeroImage] = useState(0);
+
+  // Efecto para el carrusel hero
+  useEffect(() => {
+    if (view === 'home') {
+      const interval = setInterval(() => {
+        setCurrentHeroImage((prev) => (prev + 1) % HERO_IMAGES.length);
+      }, 4500); // Cambia cada 4.5s
+      return () => clearInterval(interval);
+    }
+  }, [view]);
 
   // Efecto para forzar que el navegador no intente traducir la página
   useEffect(() => {
@@ -79,7 +143,7 @@ export default function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validación básica
     if (!formData.nombreTutor.trim() || !formData.nombreNiño.trim() || !formData.email.trim() || !formData.telefono.trim()) {
       setError('Por favor completa todos los campos requeridos');
@@ -119,6 +183,26 @@ export default function App() {
     }
   };
 
+  const handleAdminAccess = async (e) => {
+    e.preventDefault();
+    if (pinInput !== '1010') {
+      setError('PIN incorrecto. Acceso denegado.');
+      return;
+    }
+    setError('');
+    setLoadingAdmin(true);
+    setView('admin');
+
+    try {
+      const data = await getReservations();
+      setReservations(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoadingAdmin(false);
+    }
+  };
+
   const collaborators = [
     { name: "Taste the process", bio: "Nutrición y hábitos saludables.", color: "bg-[#fef0d8]" },
     { name: "COA", bio: "Diseño y creatividad infantil.", color: "bg-[#e6eff5]" },
@@ -130,16 +214,16 @@ export default function App() {
 
   const agenda = [
     { time: "10:00", type: "joint", title: "Bienvenida y Apertura", desc: "Café de bienvenida en el jardín." },
-    { 
-      time: "10:30", 
-      type: "split", 
+    {
+      time: "10:30",
+      type: "split",
       left: { title: "Charla Consciente", author: "Vero Vitamina" },
       right: { title: "Taller Sensorial", author: "Messy Mood" }
     },
     { time: "11:30", type: "joint", title: "Cuentacuentos Mágico", desc: "Un viaje a través de la imaginación." },
-    { 
-      time: "12:15", 
-      type: "split", 
+    {
+      time: "12:15",
+      type: "split",
       left: { title: "Taller Nutrición", author: "Taste the process" },
       right: { title: "Yoga Infantil", author: "Saber-se" }
     },
@@ -295,7 +379,11 @@ export default function App() {
 
   if (view === 'primaveraland') {
     return (
-      <div className="min-h-screen bg-[#fdfbf7] font-sans pt-16 md:pt-20">
+      <div className="min-h-screen bg-[#fdfbf7] font-sans pt-16 md:pt-20 relative overflow-hidden">
+        {/* Decoración de fondo Primaveral */}
+        <div className="absolute top-0 right-0 -m-32 w-96 h-96 bg-[#f9d7d6]/30 rounded-full blur-3xl -z-10"></div>
+        <div className="absolute bottom-40 left-0 -m-32 w-96 h-96 bg-[#eab355]/10 rounded-full blur-3xl -z-10"></div>
+
         <nav className="fixed top-0 w-full bg-[#fdfbf7]/95 backdrop-blur-md z-50 border-b border-[#f9d7d6] px-4 md:px-8 py-3 flex justify-between items-center">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}>
             <MessyMoodLogo className="w-10 h-10" />
@@ -303,85 +391,213 @@ export default function App() {
           </div>
         </nav>
 
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 md:py-12">
-          <div className="text-center mb-10 md:mb-16">
-            <span className="bg-[#f9d7d6] text-[#bc7948] px-3 md:px-4 py-1 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-widest mb-4 inline-block">Evento Especial</span>
-            <h2 className="text-3xl sm:text-4xl md:text-6xl font-black text-[#7a533c] mb-4 md:mb-6 leading-tight">✨🌷PRIMAVERALAND🌷✨</h2>
-            <p className="text-[#bc7948] text-base md:text-xl leading-relaxed max-w-2xl mx-auto font-medium px-2">
-              Bienvenidos a <strong className="text-[#eab355]">✨🌷PRIMAVERALAND🌷✨</strong>, un evento creado con mucho cariño por MessyMood donde disfrutar de una jornada especial en familia creando recuerdos bonitos.
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 md:py-20 relative">
+          <div className="text-center mb-12 md:mb-20">
+            <span className="bg-[#fef0d8] text-[#eab355] px-4 py-1.5 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] mb-6 inline-block shadow-sm">Edición Especial · Marzo 2026</span>
+            <div className="relative inline-block mb-6 px-4 md:px-12 py-4">
+              <SpringWreath className="absolute -left-6 md:-left-12 -top-4 w-24 md:w-32 h-24 md:h-32 -rotate-12 pointer-events-none" />
+              <SpringWreath className="absolute -right-6 md:-right-12 -top-4 w-24 md:w-32 h-24 md:h-32 rotate-12 pointer-events-none" reflect={true} />
+              
+              <h2 className="text-4xl sm:text-5xl md:text-7xl font-black text-[#7a533c] leading-none tracking-tight relative z-10">
+                PRIMAVERALAND
+              </h2>
+            </div>
+            <div className="flex justify-center items-center gap-4 mb-8">
+              <div className="h-px bg-[#f9d7d6] w-12"></div>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="#eab355" stroke="#eab355" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              <div className="h-px bg-[#f9d7d6] w-12"></div>
+            </div>
+            <p className="text-[#bc7948] text-lg md:text-2xl leading-relaxed max-w-2xl mx-auto font-medium px-2">
+              Bienvenidos a este evento único creado con cariño por MessyMood donde disfrutar de una jornada especial en familia creando <span className="text-[#eab355] font-bold">recuerdos bonitos</span>.
             </p>
-            <p className="text-[#bc7948] text-sm md:text-md mt-4 max-w-2xl mx-auto px-2">
-              Mediante esta difusión haremos llegar la información más relevante del evento así como los recordatorios oportunos.<br/><br/>
-              Agradeceros de antemano vuestra ilusión y colaboración en este espacio. Gracias a todos vosotros este evento va a ser <span className="font-black text-[#eab355]">MARAVILLOSO</span>.
+            <p className="text-[#7a533c]/80 text-sm md:text-base mt-6 max-w-2xl mx-auto px-4 font-medium">
+              Mediante esta difusión haremos llegar la información más relevante del evento así como los recordatorios oportunos.<br /><br />
+              Agradeceros de antemano vuestra ilusión y colaboración. Gracias a todos vosotros este evento va a ser maravilloso.
             </p>
           </div>
 
-          <div className="bg-white rounded-3xl p-5 md:p-8 shadow-xl border-4 border-[#eab355] mb-8 md:mb-12 relative overflow-hidden">
-            <div className="absolute top-0 right-0 bg-[#eab355] text-white text-[10px] md:text-xs font-bold px-3 md:px-4 py-1 rounded-bl-xl">DEL 3 AL 10 DE MARZO</div>
-            <h3 className="text-xl md:text-2xl font-black text-[#7a533c] mb-1 md:mb-2 mt-2 md:mt-0">Reserva de Espacio</h3>
-            <p className="font-bold text-[#bc7948] mb-4 md:mb-6 text-xs md:text-sm">DESDE HOY 3/3 HASTA 10/03</p>
-            <p className="text-[#7a533c] mb-6 font-medium text-sm md:text-base">Abierto el plazo de reserva de espacio para stands y puntos de venta en ✨🌷PRIMAVERALAND🌷✨</p>
-            
-            <div className="bg-[#fef0d8] p-4 md:p-6 rounded-2xl mb-6">
-              <h4 className="font-black text-[#7a533c] text-base md:text-lg mb-4 flex items-center gap-2">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eab355" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><circle cx="12" cy="12" r="10"></circle><path d="M9 12l2 2 4-4"></path></svg> 
-                ¿Cómo reservar?
-              </h4>
-              <ul className="space-y-3 text-[#7a533c] font-medium text-sm md:text-base">
-                <li className="flex items-start gap-2"><span className="text-[#eab355] font-black mt-0.5 md:mt-1 shrink-0">•</span> <span>Revisa la tabla de colaboradores.</span></li>
-                <li className="flex items-start gap-2"><span className="text-[#eab355] font-black mt-0.5 md:mt-1 shrink-0">•</span> <span>Elige tu opción.</span></li>
-                <li className="flex items-start gap-2"><span className="text-[#eab355] font-black mt-0.5 md:mt-1 shrink-0">•</span> <span>Realiza el pago escogiendo la opción que mejor te convenga (Tarjeta o Bizum).</span></li>
-              </ul>
-              
-              <div className="mt-8 flex flex-col gap-4">
-                <div className="text-center">
-                   <p className="text-[#bc7948] font-bold text-xs mb-2 uppercase tracking-wide">Opción 1: Pago Seguro Online</p>
-                   <a href="https://buy.stripe.com/test_aFabJ1fYfgg90GG58yaR200" target="_blank" rel="noopener noreferrer" className="bg-[#635BFF] hover:bg-[#4d45e5] text-white px-6 py-4 rounded-xl font-bold transition-colors inline-flex items-center justify-center w-full gap-3 shadow-md">
-                     <svg viewBox="0 0 60 25" xmlns="http://www.w3.org/2000/svg" className="w-12 h-5 fill-white"><path d="M59.64 14.28h-8.06c.19 1.93 1.6 3.06 3.2 3.06 1.02 0 2.33-.37 3.48-1.22l.18-1.37-3.2 2.05c-.64.45-1.34.62-1.92.62-2.49 0-3.62-1.84-3.62-4.48s1.65-4.8 4.2-4.8c2.14 0 3.78 1.48 3.78 3.96 0 .28-.02.58-.04.98zm-4.3-1.6c0-1.05-.72-1.78-1.8-1.78-1.24 0-1.92.9-1.92 1.78h3.72zm-12.8 1.6c0 1.25.96 1.84 2.5 1.84.45 0-1.78.2-1.78 1.48v1.9c-.3.08-.82.17-1.42.17-2.6 0-3.93-1.4-3.93-4.14 0-2.88 1.56-4.22 4.14-4.22.42 0 .86.06 1.28.17v1.94c-.45-.14-1-.22-1.57-.22-1.44 0-2.26.7-2.26 1.94zm-6.22-3.88h1.9v8.28h-1.9v-8.28zm-5.77-1.87v-1.6c0-.52.05-.88.16-1.14l-1.88-.2.03.6c-4.43-1.63-7.53-1.93-4.44-1.93 2.65 0 4.1 1.4 4.1 4.2v8.26h1.9v-8.2zm-10.23 6.94c-.95 0-1.64-.67-1.64-1.68v-3.48h3.2v-1.77h-3.2V5.3l-1.9.46v3.02h-2v1.78h2v3.7c0 1.95 1.3 2.92 3.2 2.92.5 0 1.05-.08 1.45-.18v-1.78c-.37.1-.73.18-1.1.18zm-7.66 1.33c1.78 0 3.12-.92 3.12-2.3 0-1.1-.88-1.73-2.6-2.1l-1.13-.25c-1-.22-1.46-.55-1.46-1.17 0-.75.76-1.27 1.9-1.27.86 0 1.73.28 2.45.68l.8-1.64c-.95-.44-2.15-.7-3.32-.7-2 0-3.66 .93-3.66 2.63 0 1.14.9 1.8 2.5 2.15l1.1.25c1.13.26 1.58.62 1.58 1.25 0 .82-.87 1.35-2.07 1.35-.97 0-2-.33-2.73-.83l-.84 1.62c.98.57 2.37.9 3.66.9z" /></svg>
-                     Pagar Reserva (Tarjeta)
-                   </a>
-                </div>
-                
-                <div className="relative flex items-center py-2">
-                    <div className="flex-grow border-t border-[#eab355]/30"></div>
-                    <span className="flex-shrink-0 mx-4 text-[#eab355] font-bold text-xs uppercase">o también</span>
-                    <div className="flex-grow border-t border-[#eab355]/30"></div>
+          <div className="bg-white rounded-[40px] p-6 md:p-10 shadow-xl border border-[#f9d7d6] mb-12 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 bg-gradient-to-r from-[#eab355] to-[#f9d7d6] text-white text-xs font-black px-6 py-2 rounded-bl-2xl shadow-sm tracking-widest">PLAZO HASTA 10/03</div>
+            <h3 className="text-2xl md:text-3xl font-black text-[#7a533c] mb-2 mt-4 md:mt-0 tracking-tight">Reserva de Espacio</h3>
+            <p className="text-[#bc7948] mb-8 font-medium text-sm md:text-base border-b border-[#fdfbf7] pb-6">Apertura de plazo para stands y puntos de venta en Primaveraland.</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+              <div className="bg-[#fef0d8]/50 p-6 md:p-8 rounded-3xl border border-[#eab355]/20">
+                <h4 className="font-black text-[#7a533c] text-lg mb-4 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#white] shadow-sm flex items-center justify-center text-[#eab355] font-black">1</div>
+                  Pasos a seguir
+                </h4>
+                <ul className="space-y-4 text-[#7a533c] font-medium text-sm">
+                  <li className="flex items-start gap-3"><span className="text-[#eab355] font-black mt-0.5">•</span> <span>Revisa la tabla de colaboradores.</span></li>
+                  <li className="flex items-start gap-3"><span className="text-[#eab355] font-black mt-0.5">•</span> <span>Elige tu opción de stand o venta.</span></li>
+                  <li className="flex items-start gap-3"><span className="text-[#eab355] font-black mt-0.5">•</span> <span className="leading-relaxed">Realiza el pago escogiendo la opción que mejor te convenga.</span></li>
+                </ul>
+              </div>
+
+              <div className="flex flex-col justify-center gap-5">
+                <a href="https://buy.stripe.com/test_aFabJ1fYfgg90GG58yaR200" target="_blank" rel="noopener noreferrer" className="bg-[#5d7b93] hover:bg-[#4a6378] text-white px-8 py-5 rounded-2xl font-black transition-all transform hover:-translate-y-1 shadow-lg text-center tracking-widest text-lg flex justify-center items-center gap-2">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+                  RESERVAR
+                </a>
+
+                <div className="relative flex items-center">
+                  <div className="flex-grow border-t border-[#f9d7d6]"></div>
+                  <span className="flex-shrink-0 mx-4 text-[#bc7948] font-bold text-xs uppercase tracking-widest">Pago Alternativo</span>
+                  <div className="flex-grow border-t border-[#f9d7d6]"></div>
                 </div>
 
-                <div className="text-center bg-white p-4 rounded-xl shadow-sm border border-[#f9d7d6]/50">
-                    <p className="text-[#bc7948] font-bold text-xs mb-2 uppercase tracking-wide">Opción 2: Bizum / Transfer</p>
-                    <p className="text-[#7a533c] text-sm">
-                      Envía un <strong className="text-[#5d7b93]">Bizum al 633022738</strong> o haz transferencia con el concepto:<br/>
-                      <span className="inline-block mt-2 bg-[#fdfbf7] px-3 py-1.5 rounded border border-[#f9d7d6] text-[#eab355] font-bold shadow-sm">COLAB+Nombre de tu proyecto</span>
-                    </p>
+                <div className="text-center bg-white p-5 rounded-2xl border border-[#f9d7d6] shadow-sm">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#bc7948" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                    <p className="text-[#bc7948] font-black text-xs uppercase tracking-widest">Bizum / Transfer</p>
+                  </div>
+                  <p className="text-[#7a533c] text-sm font-medium">
+                    Envía a <strong className="text-[#5d7b93]">633 022 738</strong><br />
+                    Concepto: <span className="text-[#eab355] font-bold">COLAB + Proyecto</span>
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-red-50 border border-red-200 p-4 md:p-5 rounded-2xl">
-              <p className="text-red-600 font-bold text-xs md:text-sm text-center leading-relaxed">
-                * RECUERDA QUE EL EVENTO SÓLO SE VA A PUBLICITAR EN HORARIO DE MAÑANA (NO DOS FRANJAS).
+            <div className="bg-[#fdfbf7] border border-[#f9d7d6] p-4 text-center rounded-2xl">
+              <p className="text-[#5d7b93] font-bold text-xs tracking-wide uppercase">
+                Aviso: El evento se publicitará exclusivamente en horario de mañana.
               </p>
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl p-5 md:p-8 shadow-lg border border-[#f9d7d6] mb-8 md:mb-12">
-            <h3 className="text-lg md:text-xl font-black text-[#7a533c] mb-4 md:mb-6 flex items-center gap-2">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5d7b93" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-              Información adicional
+          <div className="bg-white rounded-[40px] p-8 md:p-12 shadow-lg border border-[#f9d7d6] mb-12 relative">
+            <div className="absolute top-0 right-10 -m-6 bg-white border border-[#f9d7d6] p-4 rounded-full shadow-sm text-2xl hidden md:block">🌸</div>
+            <h3 className="text-2xl font-black text-[#7a533c] mb-8 flex items-center gap-3 tracking-tight">
+              Información del evento
             </h3>
-            <ul className="space-y-3 md:space-y-4 text-[#bc7948] text-sm md:text-base">
-              <li className="flex gap-2 md:gap-3"><span className="text-[#5d7b93] font-bold mt-0.5 md:mt-1 shrink-0">✓</span> <span>La aportación por reserva de espacio de stand publicitario/venta <strong>no es reembolsable</strong> excepto si la organización cancela el evento.</span></li>
-              <li className="flex gap-2 md:gap-3"><span className="text-[#5d7b93] font-bold mt-0.5 md:mt-1 shrink-0">✓</span> <span>Deberéis traer vuestra propia mesa.</span></li>
-              <li className="flex gap-2 md:gap-3"><span className="text-[#5d7b93] font-bold mt-0.5 md:mt-1 shrink-0">✓</span> <span>Incluye mantel (a conjunto para todo el evento) así como decoración general.</span></li>
-              <li className="flex gap-2 md:gap-3"><span className="text-[#5d7b93] font-bold mt-0.5 md:mt-1 shrink-0">✓</span> <span>Podéis ambientar vuestro espacio de manera libre, siguiendo la temática del evento.</span></li>
-              <li className="flex gap-2 md:gap-3"><span className="text-[#5d7b93] font-bold mt-0.5 md:mt-1 shrink-0">✓</span> <span>Revisa las normas de uso del espacio especificadas en la tabla de tarifas.</span></li>
-            </ul>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-[#fcfcfc] border border-[#f9d7d6] p-4 rounded-2xl flex gap-4">
+                <span className="text-[#5d7b93] font-bold shrink-0 mt-1">✓</span>
+                <p className="text-[#bc7948] text-sm"><strong className="text-[#7a533c]">No reembolsable:</strong> La aportación de reserva no es reembolsable excepto si se cancela el evento.</p>
+              </div>
+              <div className="bg-[#fcfcfc] border border-[#f9d7d6] p-4 rounded-2xl flex gap-4">
+                <span className="text-[#5d7b93] font-bold shrink-0 mt-1">✓</span>
+                <p className="text-[#bc7948] text-sm"><strong className="text-[#7a533c]">Mobiliario:</strong> Deberéis traer vuestra propia mesa para el stand.</p>
+              </div>
+              <div className="bg-[#fcfcfc] border border-[#f9d7d6] p-4 rounded-2xl flex gap-4">
+                <span className="text-[#5d7b93] font-bold shrink-0 mt-1">✓</span>
+                <p className="text-[#bc7948] text-sm"><strong className="text-[#7a533c]">Decoración:</strong> Incluye mantel a conjunto y decoración general. Podéis ambientar vuestro espacio libremente.</p>
+              </div>
+              <div className="bg-[#fcfcfc] border border-[#f9d7d6] p-4 rounded-2xl flex gap-4">
+                <span className="text-[#5d7b93] font-bold shrink-0 mt-1">✓</span>
+                <p className="text-[#bc7948] text-sm"><strong className="text-[#7a533c]">Normativa:</strong> Existen normas de uso del espacio especificadas con las tarifas.</p>
+              </div>
+            </div>
           </div>
-          
+
           <div className="text-center pb-8 md:pb-0">
             <button onClick={() => setView('home')} className="w-full sm:w-auto bg-[#5d7b93] text-white px-8 md:px-10 py-3 md:py-4 rounded-full font-bold hover:bg-[#4a6378] transition-colors shadow-lg text-sm md:text-base">Volver a la web</button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'pin_auth') {
+    return (
+      <div className="min-h-screen bg-[#fdfbf7] font-sans flex items-center justify-center p-6">
+        <div className="bg-white rounded-3xl p-8 shadow-xl border border-[#f9d7d6] max-w-sm w-full text-center">
+          <MessyMoodLogo className="w-16 h-16 mx-auto mb-6" />
+          <h2 className="text-2xl font-black text-[#7a533c] mb-2">Área Interna</h2>
+          <p className="text-[#bc7948] text-sm mb-6">Introduce tu PIN de administrador para acceder a las reservas.</p>
+
+          <form onSubmit={handleAdminAccess}>
+            {error && (
+              <div className="mb-4 text-xs font-bold text-red-500 bg-red-50 p-2 rounded-lg border border-red-200">
+                {error}
+              </div>
+            )}
+            <input
+              type="password"
+              value={pinInput}
+              onChange={(e) => setPinInput(e.target.value)}
+              placeholder="****"
+              className="w-full text-center tracking-widest text-2xl px-4 py-3 mb-6 rounded-xl border-2 border-[#f9d7d6] focus:outline-none focus:ring-2 focus:ring-[#eab355] focus:border-transparent"
+              autoFocus
+              maxLength={4}
+            />
+            <div className="flex gap-3">
+              <button type="button" onClick={() => { setView('home'); setPinInput(''); setError(''); }} className="flex-1 bg-gray-100 text-gray-500 px-4 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">Volver</button>
+              <button type="submit" className="flex-1 bg-[#5d7b93] text-white px-4 py-3 rounded-xl font-bold hover:bg-[#4a6378] transition-colors">Entrar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'admin') {
+    return (
+      <div className="min-h-screen bg-[#fcfcfc] font-sans p-6 md:p-12">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-3xl font-black text-[#7a533c]">Panel de Reservas</h2>
+              <p className="text-[#bc7948] mt-1 font-medium">Hay {reservations.length} inscripciones registradas en la base de datos.</p>
+            </div>
+            <button onClick={() => { setView('home'); setPinInput(''); setReservations([]); }} className="bg-white border-2 border-[#f9d7d6] text-[#7a533c] px-6 py-2 rounded-full font-bold hover:bg-[#fdfbf7] transition-colors shadow-sm">
+              Cerrar Sesión
+            </button>
+          </div>
+
+          {loadingAdmin ? (
+            <div className="text-center py-20">
+              <div className="animate-spin w-12 h-12 border-4 border-[#eab355] border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="text-[#7a533c] font-bold">Cargando datos seguros...</p>
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-2xl text-center shadow-sm">
+              <p className="font-bold mb-2">Error de Conexión</p>
+              <p className="text-sm">{error}</p>
+              <button onClick={() => setView('home')} className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-sm">Volver al inicio</button>
+            </div>
+          ) : reservations.length === 0 ? (
+            <div className="bg-white border text-center border-[#f9d7d6] text-[#bc7948] py-16 rounded-3xl shadow-sm">
+              <div className="text-4xl mb-4">📝</div>
+              <p className="font-bold text-lg text-[#7a533c]">No hay reservas todavía</p>
+              <p className="text-sm mt-1">Cuando la gente rellene el formulario aparecerán aquí.</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl shadow-xl border border-[#f9d7d6] overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-[#fdfbf7] border-b border-[#f9d7d6]">
+                      <th className="p-4 indent-2 text-xs font-black uppercase tracking-wider text-[#bc7948]">Fecha Registro</th>
+                      <th className="p-4 text-xs font-black uppercase tracking-wider text-[#bc7948]">Tutor</th>
+                      <th className="p-4 text-xs font-black uppercase tracking-wider text-[#bc7948]">Niño/a</th>
+                      <th className="p-4 text-xs font-black uppercase tracking-wider text-[#bc7948]">Contacto</th>
+                      <th className="p-4 text-xs font-black uppercase tracking-wider text-[#bc7948] max-w-xs">Notas</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#fdfbf7]">
+                    {reservations.map((res, i) => (
+                      <tr key={res.id || i} className="hover:bg-[#fcfcfc] transition-colors">
+                        <td className="p-4 indent-2 text-sm text-[#7a533c]">
+                          {new Date(res.fecha_registro).toLocaleDateString()} <span className="text-xs opacity-50 block">{new Date(res.fecha_registro).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </td>
+                        <td className="p-4 text-sm font-bold text-[#7a533c]">{res.nombre_tutor}</td>
+                        <td className="p-4 text-sm font-bold text-[#5d7b93] bg-[#e6eff5]/50 rounded-lg inline-block my-3 ml-2">{res.nombre_nino}</td>
+                        <td className="p-4 text-sm text-[#7a533c]">
+                          <div className="flex flex-col gap-1">
+                            <a href={`mailto:${res.email}`} className="hover:text-[#eab355] truncate max-w-[150px]">{res.email}</a>
+                            <a href={`tel:${res.telefono}`} className="text-xs font-bold text-[#bc7948]">{res.telefono}</a>
+                          </div>
+                        </td>
+                        <td className="p-4 text-xs text-[#bc7948] max-w-xs italic empty:before:content-['-']">{res.notas}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -391,7 +607,7 @@ export default function App() {
     <div className="min-h-screen bg-[#fdfbf7] font-sans selection:bg-[#f9d7d6] selection:text-[#7a533c]">
       {/* Navbar */}
       <nav className="fixed top-0 w-full bg-[#fdfbf7]/95 backdrop-blur-md z-50 border-b border-[#f9d7d6] px-4 md:px-8 py-3 flex justify-between items-center">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo(0,0)}>
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo(0, 0)}>
           <MessyMoodLogo className="w-10 h-10" />
           <h1 className="font-black text-lg text-[#7a533c] tracking-tight">MESSY MOOD</h1>
         </div>
@@ -400,10 +616,14 @@ export default function App() {
           <a href="#agenda" className="hover:text-[#eab355] transition-colors">AGENDA</a>
           <a href="#cafe" className="hover:text-[#eab355] transition-colors">CAFETERÍA</a>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="hidden md:flex flex-1 justify-end items-center gap-4">
           <button onClick={() => setView('formulario')} className="bg-[#eab355] text-white px-5 py-2 rounded-full font-bold text-xs hover:bg-[#d9a040] transition-colors">RESERVAR</button>
-          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden text-[#7a533c]">
-              {isMenuOpen ? <IconX /> : <IconMenu />}
+          <button onClick={() => { setView('pin_auth'); setPinInput(''); setError(''); }} className="text-[#bc7948] bg-transparent border border-[#f9d7d6] px-4 py-2 rounded-full font-bold text-[10px] tracking-wider hover:bg-[#f9d7d6]/30 transition-colors">ÁREA INTERNA</button>
+        </div>
+        <div className="flex md:hidden items-center gap-4">
+          <button onClick={() => setView('formulario')} className="bg-[#eab355] text-white px-4 py-2 rounded-full font-bold text-xs">RESERVAR</button>
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-[#7a533c]">
+            {isMenuOpen ? <IconX /> : <IconMenu />}
           </button>
         </div>
       </nav>
@@ -414,6 +634,11 @@ export default function App() {
           <a href="#event" onClick={() => setIsMenuOpen(false)}>EL EVENTO</a>
           <a href="#agenda" onClick={() => setIsMenuOpen(false)}>AGENDA</a>
           <a href="#cafe" onClick={() => setIsMenuOpen(false)}>CAFETERÍA</a>
+          <div className="h-px bg-[#f9d7d6] w-full my-2"></div>
+          <button onClick={() => { setIsMenuOpen(false); setView('pin_auth'); setPinInput(''); setError(''); }} className="text-left flex items-center gap-2 text-[#bc7948]">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            ÁREA INTERNA
+          </button>
         </div>
       )}
 
@@ -421,7 +646,7 @@ export default function App() {
       <header className="pt-32 pb-16 px-6 max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12">
         <div className="flex-1 text-center md:text-left">
           <span className="bg-[#f9d7d6] text-[#bc7948] px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-6 inline-block">Planazos y Momentazos</span>
-          <h2 className="text-5xl md:text-7xl font-black text-[#7a533c] mb-6 leading-[1.1]">Diversión <br/><span className="text-[#eab355]">Messy & Fun</span></h2>
+          <h2 className="text-5xl md:text-7xl font-black text-[#7a533c] mb-6 leading-[1.1]">Diversión <br /><span className="text-[#eab355]">Messy & Fun</span></h2>
           <p className="text-[#bc7948] mb-10 text-lg leading-relaxed max-w-md mx-auto md:mx-0">Talleres sensoriales y experiencias únicas para disfrutar de la crianza consciente en familia.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
             <button onClick={() => setView('primaveraland')} className="bg-[#eab355] hover:bg-[#d9a040] transition-colors text-white px-8 py-4 rounded-full font-bold shadow-xl whitespace-nowrap">✨ PRIMAVERALAND ✨</button>
@@ -430,8 +655,28 @@ export default function App() {
         </div>
         <div className="flex-1 w-full relative">
           <div className="bg-[#eab355]/20 absolute inset-0 rounded-[40px] rotate-3 -z-10"></div>
-          <div className="rounded-[40px] overflow-hidden border-4 border-white shadow-2xl">
-            <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1840&auto=format&fit=crop" className="w-full h-[400px] md:h-[550px] object-cover" alt="Taller Messy" />
+          <div className="rounded-[40px] overflow-hidden border-4 border-white shadow-2xl relative h-[400px] md:h-[550px] w-full">
+            {HERO_IMAGES.map((src, index) => (
+              <img
+                key={src}
+                src={src}
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${index === currentHeroImage ? 'opacity-100' : 'opacity-0'}`}
+                alt={`Maternidad y crianza respetuosa ${index + 1}`}
+              />
+            ))}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#7a533c]/40 to-transparent"></div>
+
+            {/* Controles del carrusel */}
+            <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-3 z-10">
+              {HERO_IMAGES.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentHeroImage(index)}
+                  className={`h-2.5 rounded-full transition-all duration-300 ${index === currentHeroImage ? 'bg-white w-8' : 'bg-white/50 hover:bg-white/80 w-2.5'}`}
+                  aria-label={`Ir a la imagen ${index + 1}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </header>
@@ -500,7 +745,7 @@ export default function App() {
             <div className="inline-flex items-center gap-2 bg-[#fef0d8] px-4 py-2 rounded-full text-[#eab355] font-bold text-xs mb-6">
               <IconCoffee /> CAFETERÍA SALUDABLE
             </div>
-            <h3 className="text-4xl font-black text-[#7a533c] mb-6 leading-tight">Un tentempié <br/>consciente</h3>
+            <h3 className="text-4xl font-black text-[#7a533c] mb-6 leading-tight">Un tentempié <br />consciente</h3>
             <div className="space-y-4">
               {menuItems.map((m, i) => (
                 <div key={i} className="flex justify-between border-b border-[#fdfbf7] pb-3">
@@ -526,8 +771,8 @@ export default function App() {
         <h4 className="font-black text-2xl text-[#7a533c] tracking-tighter">MESSY & MOOD</h4>
         <p className="text-[10px] font-bold tracking-[0.4em] text-[#bc7948] mt-2 uppercase">Valencia · Kids & Fun · {new Date().getFullYear()}</p>
         <div className="mt-8 flex justify-center gap-6 text-[#bc7948]">
-           <span className="text-[10px] font-bold cursor-pointer hover:text-[#eab355] transition-colors">INSTAGRAM</span>
-           <span className="text-[10px] font-bold cursor-pointer hover:text-[#eab355] transition-colors">FACEBOOK</span>
+          <span className="text-[10px] font-bold cursor-pointer hover:text-[#eab355] transition-colors">INSTAGRAM</span>
+          <span className="text-[10px] font-bold cursor-pointer hover:text-[#eab355] transition-colors">FACEBOOK</span>
         </div>
       </footer>
     </div>
